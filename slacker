@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Changes zsh globbing patterns
+unsetopt NO_MATCH >/dev/null 2>&1 || :
+
+# Dispatches calls of commands and arguments
+dispatch ()
+{
+	namespace="$1"     # Namespace to be dispatched
+	arg="${2:-}"       # First argument
+	short="${arg#*-}"  # First argument without trailing -
+	long="${short#*-}" # First argument without trailing --
+
+	# Exit and warn if no first argument is found
+	if [ -z "$arg" ]; then
+		"${namespace}_" # Call empty call placeholder
+		return 1
+	fi
+
+	shift 2 # Remove namespace and first argument from $@
+
+	# Detects if a command, --long or -short option was called
+	if [ "$arg" = "--$long" ];then
+		longname="${long%%=*}" # Long argument before the first = sign
+
+		# Detects if the --long=option has = sign
+		if [ "$long" != "$longname" ]; then
+			longval="${long#*=}"
+			long="$longname"
+			set -- "$longval" "${@:-}"
+		fi
+
+		main_call=${namespace}_option_${long}
+
+
+	elif [ "$arg" = "-$short" ];then
+		main_call=${namespace}_option_${short}
+	else
+		main_call=${namespace}_command_${long}
+	fi
+
+	$main_call "${@:-}" && dispatch_returned=$? || dispatch_returned=$?
+
+	if [ $dispatch_returned = 127 ]; then
+		"${namespace}_call_" "$namespace" "$arg" # Empty placeholder
+		return 1
+	fi
+
+	return $dispatch_returned
+}
+
+geo () ( 
+    geo=$(wget https://ipinfo.io/geo -qO -)
+    city=$(echo ${geo} | jq -r '.city')
+    region=$(echo ${geo} | jq -r '.region')
+    country=$(echo $geo | jq -r '.country | ascii_downcase')
+
+    slack status edit --text "I am in ${city} ${region} today" --emoji :${country}:
+)
+
+slacker_ () ( echo "No args")
+slacker_call_ () ( echo "Invalid command: '$@'")
+slacker_command_dnd     () ( slack status edit --text 'Do Not Disturb' --emoji :male-technologist: && slack snooze start 1440 )
+slacker_command_flight  () ( slack status edit --text 'In the air' --emoji :airplane: )
+slacker_command_wfh     () ( slack status edit --text 'Working from home' --emoji :house_with_garden: )
+slacker_command_local   () ( geo )
+slacker_command_pto     () ( slack status edit --text 'On PTO' --emoji :palm_tree: && slack snooze start 1440 )
+slacker_command_back    () ( slack status edit --text 'I am around' --emoji :computer: && slack snooze end )
+slacker_command_meeting () ( slack status edit --text 'In a meeting' --emoji :spiral_calendar_pad: && slack snooze start 1440)
+
+# Dispatch the arguments
+dispatch slacker "$@"
