@@ -49,13 +49,13 @@ dispatch ()
 	return $dispatch_returned
 }
 
-geo () ( 
+geo () (
     geo=$(wget https://ipinfo.io/geo -qO -)
     city=$(echo ${geo} | jq -r '.city')
     region=$(echo ${geo} | jq -r '.region')
     country=$(echo $geo | jq -r '.country | ascii_downcase')
 
-    slack status edit --text "I am in ${city} ${region} today" --emoji :${country}:
+    slack status edit --text "I am in ${city}, ${region} today" --emoji :flag-${country}:
 )
 
 slacker_ () ( echo "No args")
