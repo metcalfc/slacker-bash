@@ -57,16 +57,17 @@ geo () (
 
     slack status edit --text "I am in ${city}, ${region} today" --emoji :flag-${country}:
 )
+snooze () (	slack snooze start 1440 )
 
 slacker_ () ( echo "No args")
 slacker_call_ () ( echo "Invalid command: '$@'")
-slacker_command_dnd     () ( slack status edit --text 'Do Not Disturb' --emoji :male-technologist: && slack snooze start 1440 )
+slacker_command_dnd     () ( slack status edit --text 'Do Not Disturb' --emoji :male-technologist: && snooze )
 slacker_command_flight  () ( slack status edit --text 'In the air' --emoji :airplane: )
 slacker_command_wfh     () ( slack status edit --text 'Working from home' --emoji :house_with_garden: )
 slacker_command_local   () ( geo )
-slacker_command_pto     () ( slack status edit --text 'On PTO' --emoji :palm_tree: && slack snooze start 1440 )
+slacker_command_pto     () ( slack status edit --text 'On PTO' --emoji :palm_tree: && snooze )
 slacker_command_back    () ( slack status edit --text 'I am around' --emoji :computer: && slack snooze end )
-slacker_command_meeting () ( slack status edit --text 'In a meeting' --emoji :spiral_calendar_pad: && slack snooze start 1440)
+slacker_command_meeting () ( slack status edit --text 'In a meeting' --emoji :spiral_calendar_pad: && snooze)
 
 # Dispatch the arguments
 dispatch slacker "$@"
